@@ -7,21 +7,20 @@ let userVal = [];
 let resultVal = 0;
 let idx = 0;
 let valAcc = 0;
+
 const ACCNUM = 13;
 
-var i = 0;
-function move(idx) {
-  let elem = document.getElementById("status-bar");
-  let width = Math.floor((100 / lstLen) * (idx));
-  let maxWidth = Math.floor((100 / lstLen) * (idx + 1));
-
+function handleProgress(idx) {
+  const elem = document.getElementById("status-bar");
+  const nextWidth = Math.floor((100 / lstLen) * (idx + 1));
+  let currWidth = Math.floor((100 / lstLen) * (idx));
   let id = setInterval(frame, 20);
   function frame() {
-    if (width >= maxWidth) {
+    if (currWidth >= nextWidth) {
       clearInterval(id);
     } else {
-      width++;
-      elem.style.width = width + "%";
+      currWidth++;
+      elem.style.width = currWidth + "%";
     }
   }
 }
@@ -31,16 +30,19 @@ const qArr = qnaList.map((node) => {
     question: node.q,
   };
 });
+
 const aArr = qnaList.map((node) => {
+  const answerArr = node.a.map((key) => {
+    return {
+      text: Object.keys(key),
+      score: Object.values(key)
+    }
+  });
   return {
-    answer: node.a,
+    answer: answerArr,
   };
 });
-const scoreArr = qnaList.map((node) => {
-  return {
-    result: node.score,
-  };
-});
+
 function paintQuestion(question) {
   const currQ = question.question;
   questionBox.innerText = currQ;
@@ -49,16 +51,15 @@ function paintQuestion(question) {
 function selectVal(event) {
   nextBtn.disabled = false;
   const chLen = chooseBox.length;
-  for (let i = 0; i < chLen; i++) {
+  for (let i = 0; i < chLen; i++)
     chooseBox[i].classList.remove("clicked");
-  }
   event.target.classList.add("clicked");
 }
 
 function paintAnswer(answer) {
   const ansLen = answer.answer.length;
   for (let i = 0; i < ansLen; i++) {
-    chooseBox[i].innerText = answer.answer[i];
+    chooseBox[i].innerText = answer.answer[i].text;
     chooseBox[i].addEventListener("click", selectVal);
   }
 }
@@ -75,7 +76,7 @@ function handleQna(qArr, aArr) {
   else {
     paintQuestion(qArr[idx]);
     paintAnswer(aArr[idx]);
-    move(idx);
+    handleProgress(idx);
     idx++;
   }
 }
@@ -86,12 +87,14 @@ function handleNext(event) {
     if (chooseBox[i].classList[1] === "clicked") {
       chooseBox[i].classList.remove("clicked");
       userVal.push(i);
-      if (userVal.length !== 1 && userVal.length <= qnaList.length) {
-        resultVal += parseInt(scoreArr[userVal.length - 1].result[i]);
+      const currLen = userVal.length;
+      if (currLen !== 1 && currLen <= qnaList.length) {
+        resultVal += parseInt(aArr[currLen - 1].answer[i].score);
       }
       break;
     }
   }
+  window.scrollTo(0,0);
   if (idx == (lstLen - 1)) {
     nextBtn.innerText = "제출하기";
   }
@@ -99,15 +102,10 @@ function handleNext(event) {
   handleQna(qArr, aArr);
 }
 
-function init() {
-  handleQna(qArr, aArr);
-  valAcc = Math.floor(Math.random() * ACCNUM + 1);
-  nextBtn.addEventListener("click", handleNext);
-}
-
+//폰트, css 등 head에 있는 요소를 기다립니다.
 document.addEventListener("DOMContentLoaded", () => {
-  window.onload = () => {
-    init();
-  };
-}
+    handleQna(qArr, aArr);
+    valAcc = Math.floor(Math.random() * ACCNUM + 1);
+    nextBtn.addEventListener("click", handleNext);
+  }
 );
